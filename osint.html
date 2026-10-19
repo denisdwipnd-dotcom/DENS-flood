@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CYBEROSINT // Security Center</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+ --bg:#05070b;
+ --panel:#0a0f17;
+ --line:#173044;
+ --text:#d9f7ff;
+ --muted:#71909f;
+ --green:#00ff9d;
+ --cyan:#00d9ff;
+ --red:#ff416c;
+ --yellow:#ffd166;
+}
+
+body{
+ background:var(--bg);
+ color:var(--text);
+ font-family:Consolas,monospace;
+ min-height:100vh;
+ overflow-x:hidden;
+}
+
+#matrix{
+ position:fixed;
+ inset:0;
+ z-index:-2;
+ opacity:.13;
+}
+
+body:after{
+ content:"";
+ position:fixed;
+ inset:0;
+ pointer-events:none;
+ background:
+ linear-gradient(rgba(0,255,157,.025) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(0,255,157,.025) 1px,transparent 1px);
+ background-size:35px 35px;
+ z-index:-1;
+}
+
+header{
+ border-bottom:1px solid var(--line);
+ background:rgba(5,7,11,.9);
+ backdrop-filter:blur(10px);
+ padding:18px;
+ position:sticky;
+ top:0;
+ z-index:20;
+}
+
+.logo{
+ color:var(--green);
+ font-size:22px;
+ font-weight:bold;
+ letter-spacing:2px;
+}
+
+.logo span{color:var(--cyan)}
+
+.sub{
+ color:var(--muted);
+ font-size:11px;
+ margin-top:5px;
+}
+
+.container{
+ max-width:1400px;
+ margin:auto;
+ padding:18px;
+}
+
+.layout{
+ display:grid;
+ grid-template-columns:240px 1fr;
+ gap:16px;
+}
+
+.sidebar{
+ background:rgba(10,15,23,.92);
+ border:1px solid var(--line);
+ padding:12px;
+ height:max-content;
+ position:sticky;
+ top:90px;
+}
+
+.nav{
+ width:100%;
+ padding:12px;
+ margin:4px 0;
+ border:1px solid transparent;
+ background:transparent;
+ color:#8ca8b5;
+ text-align:left;
+ cursor:pointer;
+ font-family:inherit;
+}
+
+.nav:hover,
+.nav.active{
+ border-color:var(--green);
+ color:var(--green);
+ background:rgba(0,255,157,.05);
+}
+
+.main{min-width:0}
+
+.page{display:none}
+.page.active{display:block}
+
+.grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:12px;
+}
+
+.card{
+ background:rgba(10,15,23,.93);
+ border:1px solid var(--line);
+ padding:15px;
+ margin-bottom:12px;
+ box-shadow:0 0 20px rgba(0,0,0,.2);
+}
+
+.card h2{
+ font-size:14px;
+ color:var(--cyan);
+ margin-bottom:12px;
+}
+
+.stat{
+ font-size:28px;
+ color:var(--green);
+ margin:5px 0;
+}
+
+.label{
+ font-size:10px;
+ color:var(--muted);
+}
+
+.row{
+ display:flex;
+ gap:8px;
+ flex-wrap:wrap;
+}
+
+input,
+textarea,
+select{
+ width:100%;
+ background:#050a10;
+ border:1px solid #1b394b;
+ color:var(--text);
+ padding:11px;
+ outline:none;
+ font-family:inherit;
+}
+
+textarea{
+ min-height:150px;
+ resize:vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus{
+ border-color:var(--cyan);
+}
+
+button{
+ background:#07151c;
+ color:var(--green);
+ border:1px solid #1b5960;
+ padding:10px 13px;
+ cursor:pointer;
+ font-family:inherit;
+ font-weight:bold;
+}
+
+button:hover{
+ background:rgba(0,255,157,.08);
+ border-color:var(--green);
+}
+
+button.danger{
+ color:var(--red);
+ border-color:#63263a;
+}
+
+button.cyan{
+ color:var(--cyan);
+}
+
+.output{
+ background:#020509;
+ border:1px solid #122734;
+ padding:12px;
+ min-height:100px;
+ white-space:pre-wrap;
+ word-break:break-word;
+ font-size:12px;
+ color:#a8d8e4;
+ margin-top:10px;
+}
+
+.badge{
+ display:inline-block;
+ padding:4px 7px;
+ border:1px solid;
+ font-size:10px;
+}
+
+.ok{color:var(--green);border-color:var(--green)}
+.warn{color:var(--yellow);border-color:var(--yellow)}
+.bad{color:var(--red);border-color:var(--red)}
+
+.terminal{
+ background:#020406;
+ border:1px solid #14313c;
+ padding:12px;
+ min-height:160px;
+ max-height:300px;
+ overflow:auto;
+ font-size:12px;
+}
+
+.termline{margin:3px 0}
+.termline b{color:var(--green)}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:11px;
+}
+
+th,td{
+ border:1px solid #15303d;
+ padding:8px;
+ text-align:left;
+}
+
+th{color:var(--cyan)}
+
+footer{
+ text-align:center;
+ color:#49636d;
+ font-size:10px;
+ padding:25px;
+}
+
+.small-note{
+ color:#7895a2;
+ font-size:11px;
+ line-height:1.7;
+ margin-bottom:15px;
+}
+
+@media(max-width:900px){
+ .layout{grid-template-columns:1fr}
+ .sidebar{position:static}
+ .grid{grid-template-columns:1fr 1fr}
+}
+
+@media(max-width:600px){
+ .grid{grid-template-columns:1fr}
+ .container{padding:10px}
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+
+<header>
+ <div class="logo">[ CYBER<span>OSINT</span> ]</div>
+ <div class="sub">
+  DEFENSIVE SECURITY CENTER // PUBLIC INTELLIGENCE // LOCAL ANALYSIS
+ </div>
+</header>
+
+<div class="container">
+<div class="layout">
+
+<aside class="sidebar">
+
+ <button class="nav active" data-page="dashboard">
+  ▣ DASHBOARD
+ </button>
+
+ <button class="nav" data-page="osint">
+  ◉ OSINT
+ </button>
+
+ <button class="nav" data-page="url">
+  ◇ URL ANALYZER
+ </button>
+
+ <button class="nav" data-page="ioc">
+  ◆ IOC SCANNER
+ </button>
+
+ <button class="nav" data-page="hash">
+  # HASH LAB
+ </button>
+
+ <button class="nav" data-page="logs">
+  ▤ LOG ANALYZER
+ </button>
+
+ <button class="nav" data-page="files">
+  ▥ FILE HASH
+ </button>
+
+ <button class="nav" data-page="headers">
+  ▥ SECURITY CHECK
+ </button>
+
+ <button class="nav" data-page="laporan">
+  ⚠ LAPORAN WA
+ </button>
+
+ <button class="nav" data-page="reports">
+  ▧ REPORTS
+ </button>
+
+ <button class="nav" data-page="settings">
+  ⚙ SETTINGS
+ </button>
+
+</aside>
+
+<main class="main">
+
+<!-- ================= DASHBOARD ================= -->
+
+<section id="dashboard" class="page active">
+
+ <div class="grid">
+
+  <div class="card">
+   <div class="label">SCANS</div>
+   <div class="stat" id="scanCount">0</div>
+   <span class="badge ok">LOCAL</span>
+  </div>
+
+  <div class="card">
+   <div class="label">IOC FOUND</div>
+   <div class="stat" id="iocCount">0</div>
+   <span class="badge warn">ANALYSIS</span>
+  </div>
+
+  <div class="card">
+   <div class="label">SYSTEM</div>
+   <div class="stat">ONLINE</div>
+   <span class="badge ok">READY</span>
+  </div>
+
+ </div>
+
+ <div class="card">
+  <h2>▣ SYSTEM TERMINAL</h2>
+  <div class="terminal" id="terminal"></div>
+ </div>
+
+ <div class="card">
+  <h2>⚠ SECURITY NOTICE</h2>
+
+  <p class="small-note">
+   Tool ini dibuat untuk defensive security, edukasi,
+   analisis data milik sendiri, dan informasi publik.
+   Jangan gunakan untuk mengakses akun, perangkat,
+   atau sistem tanpa izin.
+  </p>
+ </div>
+
+</section>
+
+
+<!-- ================= OSINT ================= -->
+
+<section id="osint" class="page">
+
+ <div class="card">
+
+  <h2>◉ PUBLIC OSINT ANALYZER</h2>
+
+  <input id="osintInput"
+   placeholder="Domain, URL, IP, username, atau teks...">
+
+  <br><br>
+
+  <button onclick="runOSINT()">ANALYZE</button>
+
+  <button class="cyan"
+   onclick="clearBox('osintInput','osintOutput')">
+   CLEAR
+  </button>
+
+  <div id="osintOutput" class="output">
+   Menunggu input...
+  </div>
+
+ </div>
+
+ <div class="card">
+
+  <h2>PUBLIC SEARCH LINKS</h2>
+
+  <div class="row">
+
+   <button onclick="searchGoogle()">
+    WEB SEARCH
+   </button>
+
+   <button onclick="searchDNS()">
+    DNS SEARCH
+   </button>
+
+   <button onclick="searchVirus()">
+    THREAT REPUTATION
+   </button>
+
+  </div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= URL ================= -->
+
+<section id="url" class="page">
+
+ <div class="card">
+
+  <h2>◇ URL STRUCTURE ANALYZER</h2>
+
+  <input id="urlInput"
+   placeholder="https://example.com/path?id=123">
+
+  <br><br>
+
+  <button onclick="analyzeURL()">
+   ANALYZE URL
+  </button>
+
+  <div id="urlOutput" class="output">
+   Belum ada analisis.
+  </div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= IOC ================= -->
+
+<section id="ioc" class="page">
+
+ <div class="card">
+
+  <h2>◆ IOC EXTRACTOR</h2>
+
+  <textarea id="iocInput"
+   placeholder="Tempel log, teks, laporan, atau data keamanan..."></textarea>
+
+  <br><br>
+
+  <button onclick="extractIOC()">
+   EXTRACT IOC
+  </button>
+
+  <button onclick="clearBox('iocInput','iocOutput')">
+   CLEAR
+  </button>
+
+  <div id="iocOutput" class="output">
+   Belum ada hasil.
+  </div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= HASH ================= -->
+
+<section id="hash" class="page">
+
+ <div class="card">
+
+  <h2># HASH LAB</h2>
+
+  <textarea id="hashInput"
+   placeholder="Masukkan teks yang ingin dihitung hash-nya..."></textarea>
+
+  <br><br>
+
+  <button onclick="makeHash('SHA-256')">
+   SHA-256
+  </button>
+
+  <button onclick="makeHash('SHA-384')">
+   SHA-384
+  </button>
+
+  <button onclick="makeHash('SHA-512')">
+   SHA-512
+  </button>
+
+  <div id="hashOutput" class="output"></div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= LOG ANALYZER ================= -->
+
+<section id="logs" class="page">
+
+ <div class="card">
+
+  <h2>▤ LOG ANALYZER</h2>
+
+  <textarea id="logInput"
+   placeholder="Tempel log di sini..."></textarea>
+
+  <br><br>
+
+  <button onclick="analyzeLogs()">
+   ANALYZE LOG
+  </button>
+
+  <div id="logOutput" class="output"></div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= FILE HASH ================= -->
+
+<section id="files" class="page">
+
+ <div class="card">
+
+  <h2>▥ LOCAL FILE HASH</h2>
+
+  <input type="file" id="fileInput">
+
+  <br><br>
+
+  <button onclick="hashFile()">
+   CALCULATE SHA-256
+  </button>
+
+  <div id="fileOutput" class="output"></div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= SECURITY ================= -->
+
+<section id="headers" class="page">
+
+ <div class="card">
+
+  <h2>▥ SECURITY CHECKLIST</h2>
+
+  <table>
+
+   <tr>
+    <th>CONTROL</th>
+    <th>RECOMMENDATION</th>
+   </tr>
+
+   <tr>
+    <td>HTTPS</td>
+    <td>Gunakan HTTPS.</td>
+   </tr>
+
+   <tr>
+    <td>CSP</td>
+    <td>Gunakan Content-Security-Policy.</td>
+   </tr>
+
+   <tr>
+    <td>HSTS</td>
+    <td>Paksa browser menggunakan HTTPS.</td>
+   </tr>
+
+   <tr>
+    <td>NOSNIFF</td>
+    <td>Gunakan X-Content-Type-Options.</td>
+   </tr>
+
+   <tr>
+    <td>REFERRER</td>
+    <td>Gunakan Referrer-Policy.</td>
+   </tr>
+
+   <tr>
+    <td>PERMISSIONS</td>
+    <td>Batasi browser APIs.</td>
+   </tr>
+
+  </table>
+
+  <br>
+
+  <button onclick="securityScore()">
+   CALCULATE BASIC SCORE
+  </button>
+
+  <div id="securityOutput" class="output"></div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= LAPORAN WA ================= -->
+
+<section id="laporan" class="page">
+
+ <div class="card">
+
+  <h2>⚠ LAPORAN PENIPUAN WHATSAPP</h2>
+
+  <p class="small-note">
+   Modul ini membantu mengumpulkan dan merapikan bukti
+   untuk laporan. Tidak digunakan untuk mengambil lokasi
+   GPS, password, OTP, atau data pribadi yang tidak tersedia
+   secara publik.
+  </p>
+
+  <label class="label">
+   NOMOR WHATSAPP
+  </label>
+
+  <input id="waNumber"
+   placeholder="+628123456789">
+
+  <br><br>
+
+  <label class="label">
+   NAMA / IDENTITAS YANG TERLIHAT
+  </label>
+
+  <input id="suspectName"
+   placeholder="Nama yang terlihat di WhatsApp">
+
+  <br><br>
+
+  <label class="label">
+   PLATFORM
+  </label>
+
+  <select id="platform">
+   <option>WhatsApp</option>
+   <option>WhatsApp Business</option>
+   <option>Marketplace</option>
+   <option>Facebook</option>
+   <option>Instagram</option>
+   <option>Lainnya</option>
+  </select>
+
+  <br><br>
+
+  <label class="label">
+   TANGGAL KEJADIAN
+  </label>
+
+  <input type="date" id="incidentDate">
+
+  <br><br>
+
+  <label class="label">
+   NOMINAL KERUGIAN
+  </label>
+
+  <input id="lossAmount"
+   type="number"
+   placeholder="250000">
+
+  <br><br>
+
+  <label class="label">
+   METODE PEMBAYARAN
+  </label>
+
+  <select id="paymentMethod">
+   <option>Transfer Bank</option>
+   <option>E-Wallet</option>
+   <option>QRIS</option>
+   <option>COD</option>
+   <option>Lainnya</option>
+  </select>
+
+  <br><br>
+
+  <label class="label">
+   REKENING / E-WALLET TUJUAN
+  </label>
+
+  <input id="paymentTarget"
+   placeholder="Nomor rekening / e-wallet">
+
+  <br><br>
+
+  <label class="label">
+   KRONOLOGI
+  </label>
+
+  <textarea id="chronology"
+   placeholder="Tuliskan kejadian secara urut..."></textarea>
+
+  <br><br>
+
+  <label class="label">
+   LINK TERKAIT
+  </label>
+
+  <textarea id="relatedLinks"
+   placeholder="Link marketplace, profil, postingan, website, dll."></textarea>
+
+  <br><br>
+
+  <label class="label">
+   CATATAN BUKTI
+  </label>
+
+  <textarea id="evidenceNotes"
+   placeholder="Screenshot chat, bukti transfer, invoice, foto barang, resi, dll."></textarea>
+
+  <br><br>
+
+  <div class="row">
+
+   <button onclick="generateFraudReport()">
+    GENERATE REPORT
+   </button>
+
+   <button onclick="extractFraudIOC()">
+    EXTRACT IOC
+   </button>
+
+   <button onclick="saveFraudReport()">
+    SAVE LOCAL
+   </button>
+
+   <button class="danger"
+    onclick="clearFraudForm()">
+    CLEAR
+   </button>
+
+  </div>
+
+ </div>
+
+
+ <div class="card">
+
+  <h2>🔎 ANALISIS DATA</h2>
+
+  <div id="fraudAnalysis"
+   class="output">
+   Belum ada analisis.
+  </div>
+
+ </div>
+
+
+ <div class="card">
+
+  <h2>📄 PREVIEW LAPORAN</h2>
+
+  <div id="fraudReport"
+   class="output">
+   Belum ada laporan.
+  </div>
+
+  <br>
+
+  <div class="row">
+
+   <button onclick="downloadFraudTXT()">
+    EXPORT TXT
+   </button>
+
+   <button onclick="downloadFraudJSON()">
+    EXPORT JSON
+   </button>
+
+   <button onclick="printFraudReport()">
+    PRINT
+   </button>
+
+  </div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= REPORTS ================= -->
+
+<section id="reports" class="page">
+
+ <div class="card">
+
+  <h2>▧ REPORT CENTER</h2>
+
+  <button onclick="exportJSON()">
+   EXPORT JSON
+  </button>
+
+  <button onclick="exportTXT()">
+   EXPORT TXT
+  </button>
+
+  <button class="danger"
+   onclick="clearHistory()">
+   CLEAR HISTORY
+  </button>
+
+  <div id="reportOutput" class="output"></div>
+
+ </div>
+
+</section>
+
+
+<!-- ================= SETTINGS ================= -->
+
+<section id="settings" class="page">
+
+ <div class="card">
+
+  <h2>⚙ SETTINGS</h2>
+
+  <label class="label">
+   MATRIX OPACITY
+  </label>
+
+  <input type="range"
+   min="0"
+   max="100"
+   value="13"
+   oninput="matrix.style.opacity=this.value/100">
+
+  <br><br>
+
+  <button onclick="toggleMatrix()">
+   TOGGLE MATRIX
+  </button>
+
+  <button onclick="location.reload()">
+   RELOAD UI
+  </button>
+
+ </div>
+
+</section>
+
+</main>
+</div>
+</div>
+
+<footer>
+ CYBEROSINT // Defensive Security Dashboard // Local Browser Tool
+</footer>
+
+
+<script>
+
+/* =========================
+ MATRIX
+========================= */
+
+const canvas=document.getElementById("matrix");
+const ctx=canvas.getContext("2d");
+
+function resizeMatrix(){
+ canvas.width=innerWidth;
+ canvas.height=innerHeight;
+}
+
+resizeMatrix();
+
+addEventListener("resize",resizeMatrix);
+
+let chars="101010010110110010101001";
+let fontSize=14;
+let drops=[];
+
+function resetDrops(){
+ drops=Array(
+  Math.floor(canvas.width/fontSize)
+ ).fill(1);
+}
+
+resetDrops();
+
+function matrixDraw(){
+
+ ctx.fillStyle="rgba(5,7,11,.08)";
+ ctx.fillRect(
+  0,0,
+  canvas.width,
+  canvas.height
+ );
+
+ ctx.fillStyle="#00ff9d";
+ ctx.font=fontSize+"px monospace";
+
+ drops.forEach((y,i)=>{
+
+  const text=
+   chars[Math.floor(
+    Math.random()*chars.length
+   )];
+
+  ctx.fillText(
+   text,
+   i*fontSize,
+   y*fontSize
+  );
+
+  if(
+   y*fontSize>canvas.height &&
+   Math.random()>.975
+  ){
+   drops[i]=0;
+  }
+
+  drops[i]++;
+ });
+}
+
+setInterval(matrixDraw,50);
+
+function toggleMatrix(){
+
+ canvas.style.display=
+  canvas.style.display==="none"
+  ?"block"
+  :"none";
+}
+
+
+/* =========================
+ NAVIGATION
+========================= */
+
+document.querySelectorAll(".nav")
+.forEach(btn=>{
+
+ btn.addEventListener("click",()=>{
+
+  document.querySelectorAll(".nav")
+   .forEach(x=>x.classList.remove("active"));
+
+  document.querySelectorAll(".page")
+   .forEach(x=>x.classList.remove("active"));
+
+  btn.classList.add("active");
+
+  document.getElementById(
+   btn.dataset.page
+  ).classList.add("active");
+
+  terminalLog(
+   "Opened module: "+
+   btn.dataset.page
+  );
+
+  refreshReport();
+ });
+});
+
+
+/* =========================
+ STORAGE
+========================= */
+
+let historyData=
+ JSON.parse(
+  localStorage.getItem(
+   "cyber_history"
+  )||"[]"
+ );
+
+let scanCount=
+ Number(
+  localStorage.getItem(
+   "scan_count"
+  )||0
+ );
+
+function saveHistory(type,data){
+
+ historyData.push({
+  time:new Date().toISOString(),
+  type:type,
+  data:data
+ });
+
+ localStorage.setItem(
+  "cyber_history",
+  JSON.stringify(historyData)
+ );
+
+ scanCount++;
+
+ localStorage.setItem(
+  "scan_count",
+  scanCount
+ );
+
+ document.getElementById(
+  "scanCount"
+ ).textContent=scanCount;
+
+ refreshReport();
+}
+
+document.getElementById(
+ "scanCount"
+).textContent=scanCount;
+
+
+/* =========================
+ TERMINAL
+========================= */
+
+function terminalLog(msg){
+
+ const t=
+  document.getElementById("terminal");
+
+ const line=
+  document.createElement("div");
+
+ line.className="termline";
+
+ line.innerHTML=
+  "<b>root@cyberosint:</b> "+
+  escapeHTML(msg);
+
+ t.appendChild(line);
+
+ t.scrollTop=t.scrollHeight;
+}
+
+terminalLog("CyberOSINT initialized.");
+terminalLog("Defensive modules loaded.");
+terminalLog("System ready.");
+
+
+/* =========================
+ ESCAPE HTML
+========================= */
+
+function escapeHTML(str){
+
+ return String(str)
+  .replaceAll("&","&amp;")
+  .replaceAll("<","&lt;")
+  .replaceAll(">","&gt;")
+  .replaceAll('"',"&quot;")
+  .replaceAll("'","&#039;");
+}
+
+
+/* =========================
+ OSINT
+========================= */
+
+function runOSINT(){
+
+ const value=
+  document.getElementById(
+   "osintInput"
+  ).value.trim();
+
+ if(!value){
+  alert("Masukkan data terlebih dahulu.");
+  return;
+ }
+
+ let type="unknown";
+
+ if(/^https?:\/\//i.test(value))
+  type="URL";
+
+ else if(
+  /^(?:\d{1,3}\.){3}\d{1,3}$/
+  .test(value)
+ )
+  type="IPv4";
+
+ else if(
+  /^[a-z0-9.-]+\.[a-z]{2,}$/i
+  .test(value)
+ )
+  type="Domain";
+
+ else if(
+  /^[a-zA-Z0-9_.-]{3,32}$/
+  .test(value)
+ )
+  type="Potential username";
+
+ else
+  type="Text";
+
+ const result={
+  input:value,
+  type:type
+ };
+
+ document.getElementById(
+  "osintOutput"
+ ).textContent=
+`INPUT
+${value}
+
+CLASSIFICATION
+${type}
+
+NOTE
+Klasifikasi dilakukan secara lokal.
+Tool tidak mengakses akun pribadi
+atau mengambil data rahasia.`;
+
+ saveHistory("OSINT",result);
+
+ terminalLog(
+  "OSINT analysis completed."
+ );
+}
+
+
+/* =========================
+ URL
+========================= */
+
+function analyzeURL(){
+
+ const raw=
+  document.getElementById(
+   "urlInput"
+  ).value.trim();
+
+ if(!raw){
+  alert("Masukkan URL.");
+  return;
+ }
+
+ try{
+
+  const u=new URL(raw);
+
+  const params=
+   [...u.searchParams.entries()]
+   .map(x=>x[0]+" = "+x[1])
+   .join("\n")||"None";
+
+  const result={
+   protocol:u.protocol,
+   hostname:u.hostname,
+   port:u.port||"default",
+   pathname:u.pathname,
+   query:u.search||"none",
+   hash:u.hash||"none",
+   parameters:u.searchParams.size
+  };
+
+  document.getElementById(
+   "urlOutput"
+  ).textContent=
+`PROTOCOL : ${result.protocol}
+HOST     : ${result.hostname}
+PORT     : ${result.port}
+PATH     : ${result.pathname}
+QUERY    : ${result.query}
+HASH     : ${result.hash}
+
+PARAMETERS
+${params}
+
+BASIC NOTES
+• Periksa ejaan domain.
+• Jangan masukkan password/token.
+• HTTPS lebih aman untuk transport.
+• Analisis ini tidak membuktikan URL aman.`;
+
+  saveHistory("URL",result);
+
+  terminalLog(
+   "URL structure analyzed."
+  );
+
+ }catch(e){
+
+  document.getElementById(
+   "urlOutput"
+  ).textContent=
+   "URL tidak valid.";
+
+ }
+}
+
+
+/* =========================
+ IOC
+========================= */
+
+function extractIOC(){
+
+ const text=
+  document.getElementById(
+   "iocInput"
+  ).value;
+
+ if(!text.trim()){
+  alert("Masukkan teks.");
+  return;
+ }
+
+ const ips=text.match(
+  /\b(?:\d{1,3}\.){3}\d{1,3}\b/g
+ )||[];
+
+ const urls=text.match(
+  /\bhttps?:\/\/[^\s<>"']+/gi
+ )||[];
+
+ const emails=text.match(
+  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
+ )||[];
+
+ const hashes=text.match(
+  /\b[a-fA-F0-9]{32}\b|\b[a-fA-F0-9]{40}\b|\b[a-fA-F0-9]{64}\b/g
+ )||[];
+
+ const domains=text.match(
+  /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b/g
+ )||[];
+
+ const unique=a=>[...new Set(a)];
+
+ const result={
+  ip:unique(ips),
+  url:unique(urls),
+  email:unique(emails),
+  hash:unique(hashes),
+  domain:unique(domains)
+ };
+
+ const total=
+  result.ip.length+
+  result.url.length+
+  result.email.length+
+  result.hash.length+
+  result.domain.length;
+
+ document.getElementById(
+  "iocCount"
+ ).textContent=total;
+
+ document.getElementById(
+  "iocOutput"
+ ).textContent=
+`IPv4
+${result.ip.join("\n")||"None"}
+
+DOMAINS
+${result.domain.join("\n")||"None"}
+
+URL
+${result.url.join("\n")||"None"}
+
+EMAIL
+${result.email.join("\n")||"None"}
+
+HASH
+${result.hash.join("\n")||"None"}
+
+TOTAL IOC
+${total}`;
+
+ saveHistory("IOC",result);
+
+ terminalLog(
+  "IOC extraction completed."
+ );
+}
+
+
+/* =========================
+ HASH
+========================= */
+
+async function makeHash(algorithm){
+
+ const text=
+  document.getElementById(
+   "hashInput"
+  ).value;
+
+ if(!text){
+  alert("Masukkan teks.");
+  return;
+ }
+
+ const data=
+  new TextEncoder().encode(text);
+
+ const buffer=
+  await crypto.subtle.digest(
+   algorithm,
+   data
+  );
+
+ const hash=
+  [...new Uint8Array(buffer)]
+  .map(b=>
+   b.toString(16).padStart(2,"0")
+  )
+  .join("");
+
+ document.getElementById(
+  "hashOutput"
+ ).textContent=
+ `${algorithm}\n\n${hash}`;
+
+ saveHistory("HASH",{
+  algorithm,
+  hash
+ });
+
+ terminalLog(
+  algorithm+" generated."
+ );
+}
+
+
+/* =========================
+ FILE HASH
+========================= */
+
+async function hashFile(){
+
+ const file=
+  document.getElementById(
+   "fileInput"
+  ).files[0];
+
+ if(!file){
+  alert("Pilih file terlebih dahulu.");
+  return;
+ }
+
+ document.getElementById(
+  "fileOutput"
+ ).textContent="Calculating...";
+
+ const buffer=
+  await file.arrayBuffer();
+
+ const hashBuffer=
+  await crypto.subtle.digest(
+   "SHA-256",
+   buffer
+  );
+
+ const hash=
+  [...new Uint8Array(hashBuffer)]
+  .map(b=>
+   b.toString(16).padStart(2,"0")
+  )
+  .join("");
+
+ document.getElementById(
+  "fileOutput"
+ ).textContent=
+`FILE
+${file.name}
+
+SIZE
+${file.size} bytes
+
+TYPE
+${file.type||"unknown"}
+
+SHA-256
+${hash}`;
+
+ saveHistory("FILE_HASH",{
+  name:file.name,
+  size:file.size,
+  type:file.type,
+  sha256:hash
+ });
+
+ terminalLog(
+  "File hash calculated."
+ );
+}
+
+
+/* =========================
+ LOG ANALYZER
+========================= */
+
+function analyzeLogs(){
+
+ const text=
+  document.getElementById(
+   "logInput"
+  ).value;
+
+ if(!text.trim()){
+  alert("Masukkan log.");
+  return;
+ }
+
+ const lines=text.split(/\r?\n/);
+
+ let failed=0;
+ let suspicious=0;
+ let ips=[];
+
+ lines.forEach(line=>{
+
+  if(
+   /failed|denied|unauthorized|error/i
+   .test(line)
+  )
+   failed++;
+
+  if(
+   /union\s+select|<script|javascript:|etc\/passwd|cmd\.exe|powershell/i
+   .test(line)
+  )
+   suspicious++;
+
+  const found=line.match(
+   /\b(?:\d{1,3}\.){3}\d{1,3}\b/g
+  );
+
+  if(found)
+   ips.push(...found);
+
+ });
+
+ ips=[...new Set(ips)];
+
+ let risk="LOW";
+
+ if(suspicious>=3)
+  risk="HIGH";
+
+ else if(
+  suspicious>0 ||
+  failed>=5
+ )
+  risk="MEDIUM";
+
+ document.getElementById(
+  "logOutput"
+ ).textContent=
+`LINES
+${lines.length}
+
+FAILED / ERROR EVENTS
+${failed}
+
+SUSPICIOUS PATTERNS
+${suspicious}
+
+IP ADDRESSES
+${ips.join("\n")||"None"}
+
+BASIC RISK
+${risk}
+
+NOTE
+Pattern detection bukan bukti serangan.
+Verifikasi dengan konteks log sebenarnya.`;
+
+ saveHistory("LOG",{
+  lines:lines.length,
+  failed,
+  suspicious,
+  ips,
+  risk
+ });
+
+ terminalLog(
+  "Log analysis completed."
+ );
+}
+
+
+/* =========================
+ SECURITY SCORE
+========================= */
+
+function securityScore(){
+
+ const checks=[
+  ["HTTPS",20],
+  ["CSP",20],
+  ["HSTS",15],
+  ["NOSNIFF",15],
+  ["REFERRER",10],
+  ["PERMISSIONS",10]
+ ];
+
+ let score=0;
+
+ checks.forEach(
+  c=>score+=c[1]
+ );
+
+ document.getElementById(
+  "securityOutput"
+ ).textContent=
+`BASIC SECURITY SCORE
+
+${score}/90
+
+RECOMMENDED CONTROLS
+${checks.map(
+ x=>"✓ "+x[0]
+).join("\n")}
+
+Skor ini adalah checklist edukasi,
+bukan audit keamanan profesional.`;
+
+ saveHistory(
+  "SECURITY_SCORE",
+  {score}
+ );
+
+ terminalLog(
+  "Security checklist generated."
+ );
+}
+
+
+/* =========================
+ SEARCH
+========================= */
+
+function searchGoogle(){
+
+ const q=
+  document.getElementById(
+   "osintInput"
+  ).value.trim();
+
+ if(!q)return;
+
+ window.open(
+  "https://www.google.com/search?q="+
+  encodeURIComponent(q),
+  "_blank"
+ );
+}
+
+function searchDNS(){
+
+ const q=
+  document.getElementById(
+   "osintInput"
+  ).value.trim();
+
+ if(!q)return;
+
+ window.open(
+  "https://dns.google/resolve?name="+
+  encodeURIComponent(q),
+  "_blank"
+ );
+}
+
+function searchVirus(){
+
+ const q=
+  document.getElementById(
+   "osintInput"
+  ).value.trim();
+
+ if(!q)return;
+
+ window.open(
+  "https://www.virustotal.com/gui/search/"+
+  encodeURIComponent(q),
+  "_blank"
+ );
+}
+
+
+/* =========================
+ FRAUD REPORT
+========================= */
+
+let currentFraudReport=null;
+
+function getFraudData(){
+
+ return {
+
+  nomorWhatsApp:
+   document.getElementById(
+    "waNumber"
+   ).value.trim(),
+
+  nama:
+   document.getElementById(
+    "suspectName"
+   ).value.trim(),
+
+  platform:
+   document.getElementById(
+    "platform"
+   ).value,
+
+  tanggal:
+   document.getElementById(
+    "incidentDate"
+   ).value,
+
+  kerugian:
+   document.getElementById(
+    "lossAmount"
+   ).value,
+
+  pembayaran:
+   document.getElementById(
+    "paymentMethod"
+   ).value,
+
+  rekening:
+   document.getElementById(
+    "paymentTarget"
+   ).value.trim(),
+
+  kronologi:
+   document.getElementById(
+    "chronology"
+   ).value.trim(),
+
+  links:
+   document.getElementById(
+    "relatedLinks"
+   ).value.trim(),
+
+  bukti:
+   document.getElementById(
+    "evidenceNotes"
+   ).value.trim(),
+
+  dibuat:
+   new Date().toLocaleString("id-ID")
+ };
+}
+
+
+/* =========================
+ GENERATE FRAUD REPORT
+========================= */
+
+function generateFraudReport(){
+
+ const data=getFraudData();
+
+ if(
+  !data.nomorWhatsApp &&
+  !data.nama &&
+  !data.kronologi
+ ){
+
+  alert(
+   "Isi minimal nomor WhatsApp, nama, atau kronologi."
+  );
+
+  return;
+ }
+
+ currentFraudReport=data;
+
+ const report=
+`LAPORAN DUGAAN PENIPUAN
+========================
+
+DIBUAT
+${data.dibuat}
+
+PLATFORM
+${data.platform}
+
+NOMOR WHATSAPP
+${data.nomorWhatsApp||"-"}
+
+NAMA / IDENTITAS YANG TERLIHAT
+${data.nama||"-"}
+
+TANGGAL KEJADIAN
+${data.tanggal||"-"}
+
+NOMINAL KERUGIAN
+${
+ data.kerugian
+ ? "Rp "+
+   Number(
+    data.kerugian
+   ).toLocaleString("id-ID")
+ : "-"
+}
+
+METODE PEMBAYARAN
+${data.pembayaran}
+
+REKENING / E-WALLET TUJUAN
+${data.rekening||"-"}
+
+
+KRONOLOGI
+---------
+${data.kronologi||"-"}
+
+
+LINK TERKAIT
+------------
+${data.links||"-"}
+
+
+CATATAN BUKTI
+-------------
+${data.bukti||"-"}
+
+
+CATATAN
+-------
+Dokumen ini merupakan dokumentasi
+berdasarkan informasi yang dimasukkan
+oleh pengguna.
+
+Verifikasi bukti dan identitas melalui
+pihak berwenang sebelum membuat kesimpulan.`;
+
+ document.getElementById(
+  "fraudReport"
+ ).textContent=report;
+
+ saveHistory(
+  "WA_FRAUD_REPORT",
+  data
+ );
+
+ terminalLog(
+  "Fraud report generated."
+ );
+}
+
+
+/* =========================
+ FRAUD IOC
+========================= */
+
+function extractFraudIOC(){
+
+ const data=getFraudData();
+
+ const text=[
+  data.nomorWhatsApp,
+  data.nama,
+  data.rekening,
+  data.kronologi,
+  data.links,
+  data.bukti
+ ].join("\n");
+
+ const phones=text.match(
+  /(?:\+62|62|0)8[1-9][0-9]{6,11}/g
+ )||[];
+
+ const urls=text.match(
+  /https?:\/\/[^\s<>"']+/gi
+ )||[];
+
+ const emails=text.match(
+  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
+ )||[];
+
+ const ips=text.match(
+  /\b(?:\d{1,3}\.){3}\d{1,3}\b/g
+ )||[];
+
+ const unique=a=>[...new Set(a)];
+
+ const result={
+  phone:unique(phones),
+  url:unique(urls),
+  email:unique(emails),
+  ip:unique(ips)
+ };
+
+ document.getElementById(
+  "fraudAnalysis"
+ ).textContent=
+`PHONE / WHATSAPP
+${result.phone.join("\n")||"Tidak ditemukan"}
+
+URL
+${result.url.join("\n")||"Tidak ditemukan"}
+
+EMAIL
+${result.email.join("\n")||"Tidak ditemukan"}
+
+IP ADDRESS
+${result.ip.join("\n")||"Tidak ditemukan"}
+
+CATATAN
+IOC hanya diekstrak dari data yang
+kamu masukkan sendiri.
+Tidak ada pelacakan GPS atau akses
+ke akun WhatsApp.`;
+
+ document.getElementById(
+  "iocCount"
+ ).textContent=
+  result.phone.length+
+  result.url.length+
+  result.email.length+
+  result.ip.length;
+
+ terminalLog(
+  "Fraud IOC extraction completed."
+ );
+}
+
+
+/* =========================
+ SAVE FRAUD
+========================= */
+
+function saveFraudReport(){
+
+ const data=getFraudData();
+
+ if(
+  !data.nomorWhatsApp &&
+  !data.nama &&
+  !data.kronologi
+ ){
+
+  alert(
+   "Belum ada data laporan."
+  );
+
+  return;
+ }
+
+ currentFraudReport=data;
+
+ saveHistory(
+  "FRAUD_CASE",
+  data
+ );
+
+ alert(
+  "Laporan tersimpan di penyimpanan lokal browser."
+ );
+
+ terminalLog(
+  "Fraud case saved locally."
+ );
+}
+
+
+/* =========================
+ FRAUD TXT
+========================= */
+
+function downloadFraudTXT(){
+
+ if(!currentFraudReport)
+  generateFraudReport();
+
+ const text=
+  document.getElementById(
+   "fraudReport"
+  ).textContent;
+
+ if(
+  !text ||
+  text==="Belum ada laporan."
+ )
+  return;
+
+ const blob=new Blob(
+  [text],
+  {
+   type:
+   "text/plain;charset=utf-8"
+  }
+ );
+
+ downloadBlob(
+  blob,
+  "laporan-penipuan-whatsapp.txt"
+ );
+}
+
+
+/* =========================
+ FRAUD JSON
+========================= */
+
+function downloadFraudJSON(){
+
+ if(!currentFraudReport)
+  currentFraudReport=
+   getFraudData();
+
+ const blob=new Blob(
+  [
+   JSON.stringify(
+    currentFraudReport,
+    null,
+    2
+   )
+  ],
+  {
+   type:"application/json"
+  }
+ );
+
+ downloadBlob(
+  blob,
+  "laporan-penipuan-whatsapp.json"
+ );
+}
+
+
+/* =========================
+ PRINT
+========================= */
+
+function printFraudReport(){
+
+ const report=
+  document.getElementById(
+   "fraudReport"
+  ).textContent;
+
+ if(
+  !report ||
+  report==="Belum ada laporan."
+ ){
+
+  alert(
+   "Generate laporan terlebih dahulu."
+  );
+
+  return;
+ }
+
+ const win=
+  window.open(
+   "",
+   "_blank"
+  );
+
+ win.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Laporan Dugaan Penipuan</title>
+<style>
+body{
+ font-family:Arial,sans-serif;
+ padding:40px;
+ white-space:pre-wrap;
+ line-height:1.6;
+}
+</style>
+</head>
+<body>
+${escapeHTML(report)}
+</body>
+</html>
+`);
+
+ win.document.close();
+ win.print();
+}
+
+
+/* =========================
+ CLEAR FRAUD
+========================= */
+
+function clearFraudForm(){
+
+ if(!confirm(
+  "Hapus semua data formulir?"
+ ))
+  return;
+
+ [
+  "waNumber",
+  "suspectName",
+  "incidentDate",
+  "lossAmount",
+  "paymentTarget",
+  "chronology",
+  "relatedLinks",
+  "evidenceNotes"
+ ].forEach(id=>{
+  document.getElementById(
+   id
+  ).value="";
+ });
+
+ document.getElementById(
+  "fraudAnalysis"
+ ).textContent=
+  "Belum ada analisis.";
+
+ document.getElementById(
+  "fraudReport"
+ ).textContent=
+  "Belum ada laporan.";
+
+ currentFraudReport=null;
+
+ terminalLog(
+  "Fraud report form cleared."
+ );
+}
+
+
+/* =========================
+ REPORT CENTER
+========================= */
+
+function exportJSON(){
+
+ const blob=new Blob(
+  [
+   JSON.stringify(
+    historyData,
+    null,
+    2
+   )
+  ],
+  {
+   type:"application/json"
+  }
+ );
+
+ downloadBlob(
+  blob,
+  "cyberosint-report.json"
+ );
+}
+
+function exportTXT(){
+
+ let text=
+  "CYBEROSINT REPORT\n"+
+  "=================\n\n";
+
+ historyData.forEach(
+  (x,i)=>{
+
+   text+=
+`[${i+1}]
+TIME: ${x.time}
+TYPE: ${x.type}
+DATA:
+${JSON.stringify(
+ x.data,
+ null,
+ 2
+)}
+
+`;
+  }
+ );
+
+ const blob=new Blob(
+  [text],
+  {
+   type:
+   "text/plain;charset=utf-8"
+  }
+ );
+
+ downloadBlob(
+  blob,
+  "cyberosint-report.txt"
+ );
+}
+
+function downloadBlob(
+ blob,
+ name
+){
+
+ const a=
+  document.createElement("a");
+
+ a.href=
+  URL.createObjectURL(blob);
+
+ a.download=name;
+
+ document.body.appendChild(a);
+
+ a.click();
+
+ a.remove();
+
+ setTimeout(
+  ()=>URL.revokeObjectURL(a.href),
+  1000
+ );
+
+ terminalLog(
+  "Report exported: "+name
+ );
+}
+
+
+/* =========================
+ CLEAR HISTORY
+========================= */
+
+function clearHistory(){
+
+ if(!confirm(
+  "Hapus seluruh history lokal?"
+ ))
+  return;
+
+ historyData=[];
+ scanCount=0;
+
+ localStorage.removeItem(
+  "cyber_history"
+ );
+
+ localStorage.removeItem(
+  "scan_count"
+ );
+
+ document.getElementById(
+  "scanCount"
+ ).textContent="0";
+
+ refreshReport();
+
+ terminalLog(
+  "Local history cleared."
+ );
+}
+
+
+/* =========================
+ REPORT PREVIEW
+========================= */
+
+function refreshReport(){
+
+ const output=
+  document.getElementById(
+   "reportOutput"
+  );
+
+ if(!output)return;
+
+ output.textContent=
+  historyData.length
+  ? JSON.stringify(
+     historyData,
+     null,
+     2
+    )
+  : "Belum ada report.";
+}
+
+
+/* =========================
+ UTILITIES
+========================= */
+
+function clearBox(
+ input,
+ output
+){
+
+ document.getElementById(
+  input
+ ).value="";
+
+ document.getElementById(
+  output
+ ).textContent="Cleared.";
+}
+
+refreshReport();
+
+</script>
+
+</body>
+</html>
